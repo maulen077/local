@@ -1,0 +1,76 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<h1>Title: {{ book.title }}</h1>
+
+<p><strong>Author:</strong> <a href="{{ book.author.get_absolute_url }}">{{ book.author }}</a></p>
+<p><strong>Summary:</strong> {{ book.summary }}</p>
+<p><strong>ISBN:</strong> {{ book.isbn }}</p> 
+<p><strong>Language:</strong> {{ book.language }}</p>  
+<p><strong>Genre:</strong> <a href="{{ book.genre.get_absolute_url }}">{{ book.genre.all|join:", " }}</a></p>
+<p><strong>book_id:</strong> {{ book.id}}</p>  
+
+<a href = '{{book.pdf.url}}' download="{{book.pdf.url}}">
+    <button id = 'download'>
+        Download PDF
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+        </svg>
+    </button>
+</a>
+
+<button class="like-btn" data-id="{{ book.id }}">
+    {% if book.is_liked %} Unlike {% else %} Like {% endif %}
+</button>
+<script>
+    $('.like-btn').click(function () {
+        $.post("{% url 'like_book' book.id %}");
+    });
+</script>
+
+{% with comments.count as total_comments %}
+    <h2>
+        {{ total_comments }} comment{{ total_comments|pluralize }}
+    </h2>
+{% endwith %}
+
+{% for comment in comments %}
+    <div class="comment">
+        <p class="info">
+            Comment {{ forloop.counter }} by {{ comment.name }}
+            {{ comment.created }}
+        </p>
+        {{ comment.message|linebreaks }}
+    </div>
+{% empty %}
+    <p>There are no comments yet.</p>
+{% endfor %}
+
+{% if new_comment %}
+    <h2>Your comment has been added.</h2>
+{% else %}
+    <h2>Add a new comment</h2>
+    <form action="." method="post">
+        {{ comment_form.as_p }}
+        {% csrf_token %}
+        <p><input type="submit" value="Add comment"></p>
+    </form>
+{% endif %}
+
+
+<div style="margin-left:20px;margin-top:20px">
+<h4>Copies</h4>
+
+{% for copy in book.bookinstance_set.all %}
+<hr>
+<p class="{% if copy.status == 'a' %}text-success{% elif copy.status == 'd' %}text-danger{% else %}text-warning{% endif %}">{{ copy.get_status_display }}</p>
+{% if copy.status != 'a' %}<p><strong>Due to be returned:</strong> {{copy.due_back}}</p>{% endif %}
+<p><strong>Imprint:</strong> {{copy.imprint}}</p>
+<p class="text-muted"><strong>Id:</strong> {{copy.id}}</p>
+
+{% endfor %}
+</div>
+{% endblock %}
+
